@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="/plugins/fmsf_hms/icons">
+    <file>icons/015-pot.png</file>
+    <file>icons/017-ancient.png</file>
+    <file>icons/055-hat.png</file>
+    <file>icons/058-temple.png</file>
+    <file>icons/icon.png</file>
+  </qresource>
+</RCC>
