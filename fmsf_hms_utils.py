@@ -36,6 +36,7 @@ class FMSFDataset():
         self.use_ids = []
 
         logger.debug(self.resource_type.upper())
+        QgsMessageLog.logMessage(self.resource_type.upper(), "fmsf2hms")
 
         def initialize_layers():
 
@@ -53,6 +54,8 @@ class FMSFDataset():
                 # docs on this geom type are confusing. Good luck!
                 # https://qgis.org/pyqgis/master/core/QgsWkbTypes.html
                 msg = f"Failed: Unrecognized input geometry type: {geomtype}"
+                logger.debug(msg)
+                QgsMessageLog.logMessage(msg, "fmsf2hms")
                 iface.messageBar().pushMessage("Error", msg, level=Qgis.Critical)
                 return False
 
@@ -67,7 +70,10 @@ class FMSFDataset():
             # add the extra OWNERSHIP field that will be populated separately
             self.out_layer_dp.addAttributes([QgsField("OWNERSHIP", QVariant.String)])
             self.out_layer.updateFields()
-            logger.debug("layers initialized")
+
+            msg = "layers initialized"
+            logger.debug(msg)
+            QgsMessageLog.logMessage(msg, "fmsf2hms")
 
         initialize_layers()
 
@@ -107,7 +113,10 @@ class FMSFDataset():
 
     def compare_ids_against_hms(self, lookup, use_use_ids=False):
 
-        logger.debug("comparing ids against HMS ids...")
+        msg = "comparing ids against HMS ids..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
+
         start = datetime.now()
         hms_siteids = [i[0] for i in lookup[self.resource_type]]
 
@@ -118,20 +127,31 @@ class FMSFDataset():
                 siteid = feature.attributes()[self.siteid_index]
                 if siteid not in hms_siteids:
                     self.use_ids.append(siteid)
-        logger.debug(f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}")
+
+        msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
     def find_lighthouses(self):
 
-        logger.debug("finding lighthouses...")
+        msg = "finding lighthouses..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
+
         start = datetime.now()
         for feature in self.in_layer.getFeatures():
             if "Lighthouse" in feature.attributes():
                 self.use_ids.append(feature.attributes()[self.siteid_index])
-        logger.debug(f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}")
+
+        msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
     def compare_to_shapefile(self):
 
-        logger.debug("comparing to clip shapefile...")
+        msg = "comparing to clip shapefile..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
 
         clip_shp = os.path.join(DATADIR, "structure_filter.gpkg")
@@ -146,11 +166,16 @@ class FMSFDataset():
             self.use_ids.append(siteid)
 
         self.use_ids = list(set(self.use_ids))
-        logger.debug(f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}")
+
+        msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
     def compare_to_idlist(self, csv_file):
 
-        logger.debug("comparing to input siteid list...")
+        msg = "comparing to input siteid list..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
 
         with open(csv_file, newline="") as openf:
@@ -159,10 +184,16 @@ class FMSFDataset():
                 self.use_ids.append(row['SITEID'])
 
         self.use_ids = list(set(self.use_ids))
-        logger.debug(f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}")
+
+        msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
     def remove_destroyed_structures(self):
-        logger.debug("removing destroyed structures...")
+
+        msg = "removing destroyed structures..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
         for feature in self.in_layer.getFeatures():
             if "Lighthouse" in feature.attributes():
@@ -171,7 +202,9 @@ class FMSFDataset():
 
     def write_siteids_to_out_layer(self):
 
-        logger.debug(f"writing {len(self.use_ids)} use_ids to out_layer...")
+        msg = f"writing {len(self.use_ids)} use_ids to out_layer..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
 
         for feature in self.in_layer.getFeatures():
@@ -181,13 +214,17 @@ class FMSFDataset():
 
         self.out_layer.updateExtents()
 
-        logger.debug(f"  - done in {datetime.now() - start}.")
+        msg = f"  - done in {datetime.now() - start}."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
         self.fix_geometry()
 
     def fix_geometry(self):
 
-        logger.debug(f"fixing geometries...")
+        msg = f"fixing geometries..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
 
         fixed_results = processing.run("native:fixgeometries", {
@@ -198,11 +235,15 @@ class FMSFDataset():
         fixed_results['OUTPUT'].setName(self.out_layer.name())
         self.out_layer = fixed_results['OUTPUT']
 
-        logger.debug(f"  - done in {datetime.now() - start}.")
+        msg = f"  - done in {datetime.now() - start}."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
     def add_owner_type(self, ownership_csv):
 
-        logger.debug(f"adding owner type to output layer...")
+        msg = f"adding owner type to output layer..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
 
         owner_value_lookup = {
@@ -234,7 +275,9 @@ class FMSFDataset():
                 elif owner in owner_value_lookup.values():
                     owner_info[siteid] = owner
                 else:
-                    QgsMessageLog.logMessage(f"Unexpected ownership value: {owner}", "fmsf2hms")
+                    msg = f" - siteid: {siteid}; unexpected ownership: {owner}"
+                    logger.debug(msg)
+                    QgsMessageLog.logMessage(msg, "fmsf2hms")
 
         own_field_index = self.out_layer.fields().names().index("OWNERSHIP")
         with edit(self.out_layer):
@@ -244,11 +287,15 @@ class FMSFDataset():
                     feature["OWNERSHIP"] = owner_info[siteid]
                     self.out_layer.updateFeature(feature)
 
-        logger.debug(f"  - done in {datetime.now() - start}.")
+        msg = f"  - done in {datetime.now() - start}."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
     def export_to_csv(self):
 
-        logger.debug(f"writing output layer to csv...")
+        msg = f"writing output layer to csv..."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
 
         def parse_date(value):
@@ -264,10 +311,14 @@ class FMSFDataset():
                     d = parse(clean)
                     return d.strftime("%Y-%m-%d")
                 except:
-                    QgsMessageLog.logMessage(f"Unexpected ownership value: {clean}", "fmsf2hms")
+                    msg = f"Unexpected date value (1) in {siteid}: {clean}"
+                    logger.debug(msg)
+                    QgsMessageLog.logMessage(msg, "fmsf2hms")
                     return ""
             else:
-                QgsMessageLog.logMessage(f"Unexpected ownership value: {clean}", "fmsf2hms")
+                msg = f"Unexpected date value (2) in {siteid}: {clean}"
+                logger.debug(msg)
+                QgsMessageLog.logMessage(msg, "fmsf2hms")
                 return ""
 
         def sanitize_attributes(attributes, fnames, ex_configs):
@@ -323,7 +374,9 @@ class FMSFDataset():
                 row = [id, geom] + featrow
                 writer.writerow(row)
 
-        logger.debug(f"  - done in {datetime.now() - start}.")
+        msg = f"  - done in {datetime.now() - start}."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
 
 def refresh_resource_lookup():
