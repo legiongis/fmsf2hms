@@ -307,7 +307,7 @@ class FMSFDataset():
         QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
 
-        def parse_date(value):
+        def parse_datestring(value, siteid):
 
             clean = ''.join(n for n in value if n.isdigit() or n in ['-', '/', '\\'])
             clean = clean.rstrip("-")
@@ -330,7 +330,11 @@ class FMSFDataset():
                 QgsMessageLog.logMessage(msg, "fmsf2hms")
                 return ""
 
-        def sanitize_attributes(attributes, fnames, ex_configs):
+        def sanitize_attributes(attributes, fields, ex_configs):
+
+            field_info = {i.name(): i.typeName() for i in fields}
+
+            siteid = attributes[self.siteid_index]
             row = list()
             fields_to_concat = []
             concat_vals = {}
@@ -338,14 +342,17 @@ class FMSFDataset():
                 concat_vals[k] = []
                 fields_to_concat += v
             for index, attr in enumerate(attributes):
-                fname = fnames[index]
+                fname = list(field_info.keys())[index]
                 if str(attr) == "NULL":
                     value = ""
                 else:
                     value = str(attr)
 
                 if fname in config['date_fields']:
-                    value = parse_date(value)
+                    if field_info[fname] == "date" and value != "":
+                        value = attr.toString("yyyy-MM-dd")
+                    else:
+                        value = parse_datestring(value, siteid)
 
                 if fname not in fields_to_concat:
                     row.append(value)
@@ -379,7 +386,7 @@ class FMSFDataset():
             for feature in self.out_layer.getFeatures():
                 id = str(uuid.uuid4())
                 geom = feature.geometry().asWkt()
-                featrow = sanitize_attributes(feature.attributes(), field_names, config)
+                featrow = sanitize_attributes(feature.attributes(), self.out_layer.fields(), config)
                 row = [id, geom] + featrow
                 writer.writerow(row)
 
