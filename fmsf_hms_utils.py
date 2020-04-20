@@ -195,10 +195,19 @@ class FMSFDataset():
         logger.debug(msg)
         QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
+
+        des_structures = list()
+        dfield = self.out_layer.fields().names().index("DESTROYED")
         for feature in self.in_layer.getFeatures():
-            if "Lighthouse" in feature.attributes():
-                self.use_ids.append(feature.attributes()[self.siteid_index])
-        logger.debug(f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}")
+            if feature.attributes()[dfield] == "YES":
+                des_structures.append(feature.attributes()[self.siteid_index])
+        currentids_set = set(self.use_ids)
+        des_structures_set = set(des_structures)
+        self.use_ids = list(currentids_set - des_structures_set)
+
+        msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
     def write_siteids_to_out_layer(self):
 
