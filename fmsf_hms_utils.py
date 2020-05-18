@@ -101,7 +101,7 @@ class FMSFDataset():
                 'EXTFABRIC': ['EXTFABRIC1', 'EXTFABRIC2', 'EXTFABRIC3', 'EXTFABRIC4']
             }
 
-        if self.resource_type == "Historic Structure":
+        if self.resource_type == "Archaeological Site":
             configs['concat_fields'] = {
                 'SITETYPE': ['SITETYPE1', 'SITETYPE2', 'SITETYPE3', 'SITETYPE4', 'SITETYPE5', 'SITETYPE6'],
                 'CULTURE': ['CULTURE1', 'CULTURE2', 'CULTURE3', 'CULTURE4', 'CULTURE5', 'CULTURE6', 'CULTURE7', 'CULTURE8']
