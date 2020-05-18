@@ -47,9 +47,9 @@ class FMSFDataset():
             # QgsWkbTypes.displayString(gPnt.wkbType())
             geomtype = self.in_layer.wkbType()
             if geomtype == 1:
-                geom_name = "Point"
+                geom_names = ("Point", "point")
             elif geomtype == 6 or geomtype == 3:
-                geom_name = "MultiPolygon"
+                geom_names = ("MultiPolygon", "polygon")
             else:
                 # docs on this geom type are confusing. Good luck!
                 # https://qgis.org/pyqgis/master/core/QgsWkbTypes.html
@@ -61,7 +61,8 @@ class FMSFDataset():
 
             self.siteid_index = self.in_layer.fields().names().index("SITEID")
 
-            self.out_layer = QgsVectorLayer(geom_name, self.layer_name + " - New HMS", "memory",
+            self.out_layer_name = self.layer_name + " - New HMS"
+            self.out_layer = QgsVectorLayer(geom_names[0], self.out_layer_name, "memory",
                                             crs=self.in_layer.crs()
                                             )
             self.out_layer_dp = self.out_layer.dataProvider()
@@ -70,6 +71,9 @@ class FMSFDataset():
             # add the extra OWNERSHIP field that will be populated separately
             self.out_layer_dp.addAttributes([QgsField("OWNERSHIP", QVariant.String)])
             self.out_layer.updateFields()
+
+            self.out_csv_path = self.file_path.replace(".shp", "-hms.csv")
+            self.out_csv_uri = "file:///" + self.out_csv_path + "?type=csv&wktField=geom&crs=EPSG:4326&geomType=" + geom_names[1]
 
             msg = "layers initialized"
             logger.debug(msg)
@@ -380,16 +384,19 @@ class FMSFDataset():
         concat_fields.sort()
         fields += concat_fields
 
-        with open(out_path, "w",  newline="") as outcsv:
+        with open(self.out_csv_path, "w",  newline="") as outcsv:
             writer = csv.writer(outcsv)
             writer.writerow(fields)
             for feature in self.out_layer.getFeatures():
                 id = str(uuid.uuid4())
                 geom = feature.geometry().asWkt()
                 featrow = sanitize_attributes(feature.attributes(), self.out_layer.fields(), config)
-                row = [id, geom] + featrow
-                writer.writerow(row)
+                outrow = [id, geom] + featrow
+                writer.writerow(outrow)
 
+
+        csv_layer = QgsVectorLayer(self.out_csv_uri, self.out_layer_name, "delimitedtext")
+        QgsProject.instance().addMapLayer(csv_layer)
         msg = f"  - done in {datetime.now() - start}."
         logger.debug(msg)
         QgsMessageLog.logMessage(msg, "fmsf2hms")

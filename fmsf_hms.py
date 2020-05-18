@@ -278,7 +278,6 @@ class FMSFToHMS:
             ds.write_siteids_to_out_layer()
             if os.path.isfile(ownership_file):
                 ds.add_owner_type(ownership_file)
-            ds.add_output_to_map()
             ds.export_to_csv()
 
             iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
@@ -315,7 +314,6 @@ class FMSFToHMS:
             ds.write_siteids_to_out_layer()
             if os.path.isfile(ownership_file):
                 ds.add_owner_type(ownership_file)
-            ds.add_output_to_map()
             ds.export_to_csv()
 
             iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
@@ -359,7 +357,6 @@ class FMSFToHMS:
             ds.write_siteids_to_out_layer()
             if os.path.isfile(ownership_file):
                 ds.add_owner_type(ownership_file)
-            ds.add_output_to_map()
             ds.export_to_csv()
 
             iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
