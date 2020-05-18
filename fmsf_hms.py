@@ -28,7 +28,8 @@ from datetime import datetime
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QFileDialog
-from qgis.core import QgsMessageLog, QgsLogger
+from qgis.core import QgsMessageLog, QgsLogger, Qgis
+from qgis.utils import iface
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -280,6 +281,9 @@ class FMSFToHMS:
             ds.add_output_to_map()
             ds.export_to_csv()
 
+            iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
+
+
     def run_archaeological_sites(self):
         """Run method that performs all the real work"""
 
@@ -313,6 +317,8 @@ class FMSFToHMS:
                 ds.add_owner_type(ownership_file)
             ds.add_output_to_map()
             ds.export_to_csv()
+
+            iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
 
     def run_historic_structures(self):
         """Run method that performs all the real work"""
@@ -356,6 +362,8 @@ class FMSFToHMS:
             ds.add_output_to_map()
             ds.export_to_csv()
 
+            iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
+
     def run_update_arches_lookup(self):
         """Run method that performs all the real work"""
 
@@ -377,3 +385,4 @@ class FMSFToHMS:
         if result:
             lookup = load_lookup()
             refresh_resource_lookup()
+            iface.messageBar().pushMessage("Success", "Lookup update completed.", level=Qgis.Success, duration=0)
