@@ -42,6 +42,9 @@ FORM_CLASS_HIST, _ = uic.loadUiType(os.path.join(
 FORM_CLASS_LOOKUP, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'dialog_update_lookup.ui'))
 
+FORM_CLASS_WRITE, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'dialog_write_csv.ui'))
+
 
 class CemeteryDialog(QtWidgets.QDialog, FORM_CLASS_CEM):
 
@@ -85,3 +88,10 @@ class UpdateLookupDialog(QtWidgets.QDialog, FORM_CLASS_LOOKUP):
 
         self.lastUpdateLabel.setText(msg1)
         self.continueMessageLabel.setText(msg2)
+
+
+class WriteCSVDialog(QtWidgets.QDialog, FORM_CLASS_WRITE):
+    def __init__(self, parent=None):
+        """Constructor."""
+        super(WriteCSVDialog, self).__init__(parent)
+        self.setupUi(self)
