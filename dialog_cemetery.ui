@@ -11,10 +11,10 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>FMSF - HMS</string>
+   <string>Filter Cemeteries</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
+   <iconset>
     <normaloff>:/plugins/fmsf_hms/icons/icons/icon.png</normaloff>:/plugins/fmsf_hms/icons/icons/icon.png</iconset>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget">
