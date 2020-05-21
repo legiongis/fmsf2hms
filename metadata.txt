@@ -6,14 +6,14 @@
 name=FMSF - HMS
 qgisMinimumVersion=3.0
 description=This plugin is used to aid the processing and upload of FMSF data into HMS.
-version=0.1
+version=0.1-beta.3
 author=Legion GIS, LLC
 email=adam@legiongis.com
 
 about=This plugin is used to process and convert shapefile data received from the FMSF to format compatible with HMS.
 
-tracker=http://bugs
-repository=http://repo
+tracker=https://github.com/legiongis/fmsf2hms/issues
+repository=https://github.com/legiongis/fmsf2hms
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,9 +25,9 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=python
 
-homepage=http://homepage
+homepage=https://www.notion.so/legiongis/FMSF-to-HMS-QGIS-Plugin-1a413cd8aa334e9bb2180be8c6841665#f00e4a61322748ebbc8f777a738d8e3f
 category=Vector
-icon=icon.png
+icon=icons/icon.png
 # experimental flag
 experimental=True
 
@@ -44,4 +44,3 @@ Category of the plugin: Raster, Vector, Database or Web
 
 # If the plugin can run on QGIS Server.
 server=False
-
