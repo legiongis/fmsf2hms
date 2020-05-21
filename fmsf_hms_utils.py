@@ -13,7 +13,7 @@ from osgeo import ogr
 from dateutil.parser import parse
 from qgis.PyQt.QtCore import QVariant
 from qgis.core.additions.edit import edit
-from qgis.core import QgsMessageLog, Qgis, QgsVectorLayer, QgsProject, QgsField
+from qgis.core import QgsMessageLog, Qgis, QgsVectorLayer, QgsProject, QgsField, QgsGeometry, QgsWkbTypes
 from qgis.utils import iface
 
 DATADIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
@@ -22,7 +22,7 @@ LOGDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
 logger = logging.getLogger("fmsf2hms")
 
 
-class FMSFDataset():
+class FMSFDataFilter():
 
     def __init__(self, file_path, resource_type=""):
 
@@ -304,9 +304,49 @@ class FMSFDataset():
         logger.debug(msg)
         QgsMessageLog.logMessage(msg, "fmsf2hms")
 
-    def export_to_csv(self):
 
-        msg = f"writing output layer to csv..."
+class HMSDataWriter(object):
+
+    def __init__(self, layer, resource_type):
+
+        self.in_layer = layer
+        self.siteid_index = self.in_layer.fields().names().index("SITEID")
+
+        def get_export_configs(resource_type):
+
+            configs = {
+                "date_fields": ["YEARESTAB", "D_NRLISTED", "YEARBUILT"],
+                "out_file_name": f"{resource_type.replace(' ', '')}-hms.csv",
+                "layer_name": f"{resource_type.replace(' ', '')} - HMS Ready",
+                "concat_fields": {}
+            }
+
+            if resource_type == "Historic Cemeteries":
+                configs['concat_fields'] = {
+                    'CEMTYPE': ['CEMTYPE1', 'CEMTYPE2'],
+                    'ETHNICGRP': ['ETHNICGRP1', 'ETHNICGRP2', 'ETHNICGRP3', 'ETHNICGRP4']
+                }
+
+            if resource_type == "Historic Structures":
+                configs['concat_fields'] = {
+                    'STRUCUSE': ['STRUCUSE1', 'STRUCUSE2', 'STRUCUSE3'],
+                    'STRUCSYS': ['STRUCSYS1', 'STRUCSYS2', 'STRUCSYS3'],
+                    'EXTFABRIC': ['EXTFABRIC1', 'EXTFABRIC2', 'EXTFABRIC3', 'EXTFABRIC4']
+                }
+
+            if resource_type == "Archaeological Sites":
+                configs['concat_fields'] = {
+                    'SITETYPE': ['SITETYPE1', 'SITETYPE2', 'SITETYPE3', 'SITETYPE4', 'SITETYPE5', 'SITETYPE6'],
+                    'CULTURE': ['CULTURE1', 'CULTURE2', 'CULTURE3', 'CULTURE4', 'CULTURE5', 'CULTURE6', 'CULTURE7', 'CULTURE8']
+                }
+
+            return configs
+
+        self.configs = get_export_configs(resource_type)
+
+    def write_csv(self, out_directory):
+
+        msg = f"writing csv..."
         logger.debug(msg)
         QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
@@ -334,7 +374,7 @@ class FMSFDataset():
                 QgsMessageLog.logMessage(msg, "fmsf2hms")
                 return ""
 
-        def sanitize_attributes(attributes, fields, ex_configs):
+        def sanitize_attributes(attributes, fields):
 
             field_info = {i.name(): i.typeName() for i in fields}
 
@@ -342,7 +382,7 @@ class FMSFDataset():
             row = list()
             fields_to_concat = []
             concat_vals = {}
-            for k, v in ex_configs['concat_fields'].items():
+            for k, v in self.configs['concat_fields'].items():
                 concat_vals[k] = []
                 fields_to_concat += v
             for index, attr in enumerate(attributes):
@@ -351,8 +391,10 @@ class FMSFDataset():
                     value = ""
                 else:
                     value = str(attr)
+                    if value == "Unspecified by surveyor":
+                        value = "Unspecified by Surveyor"
 
-                if fname in config['date_fields']:
+                if fname in self.configs['date_fields']:
                     if field_info[fname] == "date" and value != "":
                         value = attr.toString("yyyy-MM-dd")
                     else:
@@ -362,44 +404,60 @@ class FMSFDataset():
                     row.append(value)
                     continue
 
-                for k, v in ex_configs['concat_fields'].items():
+                for k, v in self.configs['concat_fields'].items():
                     if fname in v and not value == "":
                         concat_vals[k].append(value)
 
-            new_concat = list(ex_configs['concat_fields'].keys())
+            new_concat = list(self.configs['concat_fields'].keys())
             new_concat.sort()
             for nc in new_concat:
-                row.append(";".join(concat_vals[nc]))
+                trans_cat = list()
+                for i in concat_vals[nc]:
+                    if "," in i:
+                        trans_cat.append(f'"{i}"')
+                    else:
+                        trans_cat.append(i)
+                row.append(",".join(trans_cat))
             return row
 
-        config = self._get_export_configs()
-        out_path = self.file_path.replace(".shp", "-hms.csv")
-        field_names = self.out_layer.fields().names()
+        field_names = self.in_layer.fields().names()
         fields = ['ResourceID', 'geom'] + field_names
         concat_fields = list()
-        for new, orig in config['concat_fields'].items():
+        for new, orig in self.configs['concat_fields'].items():
             concat_fields.append(new)
             fields = [i for i in fields if i not in orig]
 
         concat_fields.sort()
         fields += concat_fields
 
-        with open(self.out_csv_path, "w",  newline="") as outcsv:
+        out_path = os.path.join(out_directory, self.configs['out_file_name'])
+        with open(out_path, "w",  newline="") as outcsv:
             writer = csv.writer(outcsv)
             writer.writerow(fields)
-            for feature in self.out_layer.getFeatures():
+            for feature in self.in_layer.getFeatures():
                 id = str(uuid.uuid4())
-                geom = feature.geometry().asWkt()
-                featrow = sanitize_attributes(feature.attributes(), self.out_layer.fields(), config)
-                outrow = [id, geom] + featrow
+                wkt_geom = feature.geometry().asWkt(precision=9)
+                featrow = sanitize_attributes(feature.attributes(), self.in_layer.fields())
+                outrow = [id, wkt_geom] + featrow
                 writer.writerow(outrow)
 
+        g = QgsWkbTypes.displayString(self.in_layer.wkbType())
+        geoms = {
+            "Point": "point",
+            "MultiPoint": "point",
+            "Polygon": "polygon",
+            "MultiPolygon": "polygon",
+        }
 
-        csv_layer = QgsVectorLayer(self.out_csv_uri, self.out_layer_name, "delimitedtext")
+        load_uri = "file:///" + out_path + "?type=csv&wktField=geom&crs=EPSG:4326&geomType=" + geoms[g]
+        csv_layer = QgsVectorLayer(load_uri, self.configs['layer_name'], "delimitedtext")
         QgsProject.instance().addMapLayer(csv_layer)
+
         msg = f"  - done in {datetime.now() - start}."
         logger.debug(msg)
         QgsMessageLog.logMessage(msg, "fmsf2hms")
+
+        return os.path.abspath(out_path)
 
 
 def refresh_resource_lookup():

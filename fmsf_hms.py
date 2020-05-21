@@ -39,10 +39,11 @@ from .fmsf_hms_dialogs import (
     ArchaeologicalSiteDialog,
     HistoricStructureDialog,
     UpdateLookupDialog,
+    WriteCSVDialog,
 )
 
 from .fmsf_hms_utils import refresh_resource_lookup, load_lookup
-from .fmsf_hms_utils import FMSFDataset
+from .fmsf_hms_utils import FMSFDataFilter, HMSDataWriter
 
 def make_logger():
     LOGDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -221,6 +222,13 @@ class FMSFToHMS:
             parent=self.iface.mainWindow(),
             add_to_toolbar=False
         )
+        self.add_action(
+            os.path.join(icon_dir, "056-barrow.png"),
+            text=self.tr(u'Write HMS CSV'),
+            callback=self.run_write_csv,
+            parent=self.iface.mainWindow(),
+            add_to_toolbar=False
+        )
 
         # will be set False in run()
         self.first_start = True
@@ -244,6 +252,11 @@ class FMSFToHMS:
     def select_siteid_csv(self):
         filename, _filter = QFileDialog.getOpenFileName(self.dlg, "Select SITEID CSV... ", "", "*.csv")
         self.dlg.siteidInput.setText(filename)
+
+    def select_output_directoy(self):
+        dirname = QFileDialog.getExistingDirectory(self.dlg, "Select output directory... ", "")
+        self.dlg.outputDirectory.setText(dirname)
+
 
     def run_cemeteries(self):
         """Run method that performs all the real work"""
@@ -270,7 +283,7 @@ class FMSFToHMS:
 
             lookup = load_lookup()
 
-            ds = FMSFDataset(input_file, resource_type="Historic Cemetery")
+            ds = FMSFDataFilter(input_file, resource_type="Historic Cemetery")
             if add_to_map is True:
                 ds.add_input_to_map()
 
@@ -307,7 +320,7 @@ class FMSFToHMS:
 
             lookup = load_lookup()
 
-            ds = FMSFDataset(input_file, resource_type="Archaeological Site")
+            ds = FMSFDataFilter(input_file, resource_type="Archaeological Site")
             if add_to_map is True:
                 ds.add_input_to_map()
             ds.compare_ids_against_hms(lookup)
@@ -343,7 +356,7 @@ class FMSFToHMS:
             ownership_file = self.dlg.ownerTypeInput.text().replace("'", "").replace('"', "")
             siteid_file = self.dlg.siteidInput.text().replace("'", "").replace('"', "")
 
-            ds = FMSFDataset(input_file, resource_type="Historic Structure")
+            ds = FMSFDataFilter(input_file, resource_type="Historic Structure")
             if add_to_map is True:
                 ds.add_input_to_map()
 
@@ -383,3 +396,30 @@ class FMSFToHMS:
             lookup = load_lookup()
             refresh_resource_lookup()
             iface.messageBar().pushMessage("Success", "Lookup update completed.", level=Qgis.Success, duration=0)
+
+    def run_write_csv(self):
+        """Run method that performs all the real work"""
+
+        # initializes the logger, makes it available here, but also in the
+        # fmsf_hms_utils operations by using logging.getLogger("fmsf2hms")
+        logger = make_logger()
+
+        self.dlg = WriteCSVDialog()
+        self.dlg.outputDirectoryButton.clicked.connect(self.select_output_directoy)
+
+        # show the dialog
+        self.dlg.show()
+        # Run the dialog event loop
+        result = self.dlg.exec_()
+
+        if result:
+
+            res_type = self.dlg.buttonGroup.checkedButton().text()
+            out_dir = self.dlg.outputDirectory.text()
+            logger.debug(res_type)
+
+            layer = iface.activeLayer()
+            dw = HMSDataWriter(layer, res_type)
+
+            output = dw.write_csv(out_dir)
+            iface.messageBar().pushMessage("Success", "CSV created: " + output, level=Qgis.Success, duration=0)
