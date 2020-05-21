@@ -215,12 +215,29 @@ class FMSFDataFilter():
         QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
 
+        dupes_removed = 0
         for feature in self.in_layer.getFeatures():
             siteid = feature.attributes()[self.siteid_index]
             if siteid in self.use_ids:
+
+                # this proved to be the most effective geometry fixing, remaking
+                # the geometry and removing duplicate nodes from it. the native
+                # fixgeometries function is still called later though.
+                old_geom = feature.geometry().asWkt()
+                new_geom = QgsGeometry().fromWkt(old_geom)
+                dupes = new_geom.removeDuplicateNodes()
+                if dupes is True:
+                    dupes_removed += 1
+                feature.setGeometry(new_geom)
+
                 self.out_layer_dp.addFeature(feature)
+                self.use_ids.remove(siteid)
 
         self.out_layer.updateExtents()
+
+        msg = f"  - removed {dupes_removed} duplicate nodes during iteration."
+        logger.debug(msg)
+        QgsMessageLog.logMessage(msg, "fmsf2hms")
 
         msg = f"  - done in {datetime.now() - start}."
         logger.debug(msg)
@@ -230,7 +247,7 @@ class FMSFDataFilter():
 
     def fix_geometry(self):
 
-        msg = f"fixing geometries..."
+        msg = f"running native:fixgeometries..."
         logger.debug(msg)
         QgsMessageLog.logMessage(msg, "fmsf2hms")
         start = datetime.now()
