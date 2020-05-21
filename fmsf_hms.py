@@ -365,7 +365,7 @@ class FMSFToHMS:
                 ds.compare_to_idlist(siteid_file)
             ds.compare_to_shapefile()
 
-            ds.compare_ids_against_hms(lookup, use_use_ids=True)
+            ds.compare_ids_against_hms(lookup, compare_to_use_ids=True)
             ds.remove_destroyed_structures()
             ds.write_siteids_to_out_layer()
             if os.path.isfile(ownership_file):

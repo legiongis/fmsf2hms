@@ -33,7 +33,7 @@ class FMSFDataFilter():
         self.siteid_index = None
         self.out_layer = None
         self.out_layer_dp = None
-        self.use_ids = []
+        self.use_ids = set()
 
         logger.debug(self.resource_type.upper())
         QgsMessageLog.logMessage(self.resource_type.upper(), "fmsf2hms")
@@ -115,22 +115,22 @@ class FMSFDataFilter():
     def add_output_to_map(self):
         QgsProject.instance().addMapLayer(self.out_layer)
 
-    def compare_ids_against_hms(self, lookup, use_use_ids=False):
+    def compare_ids_against_hms(self, lookup, compare_to_use_ids=False):
 
         msg = "comparing ids against HMS ids..."
         logger.debug(msg)
         QgsMessageLog.logMessage(msg, "fmsf2hms")
 
         start = datetime.now()
-        hms_siteids = [i[0] for i in lookup[self.resource_type]]
+        hms_siteids = set([i[0] for i in lookup[self.resource_type]])
 
-        if use_use_ids is True:
-            self.use_ids = [i for i in self.use_ids if i not in hms_siteids]
+        if compare_to_use_ids is True:
+            self.use_ids = self.use_ids - hms_siteids
         else:
             for feature in self.in_layer.getFeatures():
                 siteid = feature.attributes()[self.siteid_index]
                 if siteid not in hms_siteids:
-                    self.use_ids.append(siteid)
+                    self.use_ids.add(siteid)
 
         msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
         logger.debug(msg)
@@ -145,7 +145,7 @@ class FMSFDataFilter():
         start = datetime.now()
         for feature in self.in_layer.getFeatures():
             if "Lighthouse" in feature.attributes():
-                self.use_ids.append(feature.attributes()[self.siteid_index])
+                self.use_ids.add(feature.attributes()[self.siteid_index])
 
         msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
         logger.debug(msg)
@@ -167,9 +167,7 @@ class FMSFDataFilter():
 
         for feature in clipped.getFeatures():
             siteid = feature.attributes()[self.siteid_index]
-            self.use_ids.append(siteid)
-
-        self.use_ids = list(set(self.use_ids))
+            self.use_ids.add(siteid)
 
         msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
         logger.debug(msg)
@@ -185,9 +183,7 @@ class FMSFDataFilter():
         with open(csv_file, newline="") as openf:
             reader = csv.DictReader(openf)
             for row in reader:
-                self.use_ids.append(row['SITEID'])
-
-        self.use_ids = list(set(self.use_ids))
+                self.use_ids.add(row['SITEID'])
 
         msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
         logger.debug(msg)
@@ -205,9 +201,8 @@ class FMSFDataFilter():
         for feature in self.in_layer.getFeatures():
             if feature.attributes()[dfield] == "YES":
                 des_structures.append(feature.attributes()[self.siteid_index])
-        currentids_set = set(self.use_ids)
-        des_structures_set = set(des_structures)
-        self.use_ids = list(currentids_set - des_structures_set)
+
+        self.use_ids = self.use_ids - set(des_structures)
 
         msg = f"  - done in {datetime.now() - start}. use_ids total: {len(self.use_ids)}"
         logger.debug(msg)
