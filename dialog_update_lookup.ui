@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>453</width>
-    <height>139</height>
+    <height>219</height>
    </rect>
   </property>
   <property name="mouseTracking">
@@ -17,7 +17,7 @@
    <string>Update FMSF/HMS Lookup</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="resources.qrc">
+   <iconset>
     <normaloff>:/plugins/fmsf_hms/icons/icons/icon.png</normaloff>:/plugins/fmsf_hms/icons/icons/icon.png</iconset>
   </property>
   <widget class="QWidget" name="verticalLayoutWidget_3">
@@ -26,7 +26,7 @@
      <x>10</x>
      <y>10</y>
      <width>421</width>
-     <height>111</height>
+     <height>191</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -47,12 +47,25 @@
       <property name="text">
        <string>&lt;placeholder&gt;</string>
       </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
      </widget>
     </item>
     <item>
      <widget class="QLabel" name="continueMessageLabel">
       <property name="text">
        <string>&lt;placeholder&gt;</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string/>
       </property>
      </widget>
     </item>

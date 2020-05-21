@@ -83,8 +83,10 @@ class UpdateLookupDialog(QtWidgets.QDialog, FORM_CLASS_LOOKUP):
             msg1 = "No lookup table."
             msg2 = "Click OK to create the lookup table."
         else:
-            msg1 = "Lastest lookup table: " + os.path.basename(table)
-            msg2 = "Click OK to refresh the lookup table, or Cancel to continue using this one."
+            msg1 = "Current lookup table: " + os.path.basename(table)
+            msg2 = "Click OK to refresh the lookup table, or Cancel to continue using this one. "\
+                   "There is no need to update the table if no new resources have been added to "\
+                   "HMS since the date of the last table."
 
         self.lastUpdateLabel.setText(msg1)
         self.continueMessageLabel.setText(msg2)
