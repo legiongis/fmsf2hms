@@ -283,7 +283,7 @@ class FMSFDataFilter():
             'FORE': "Foreign",
             'NAAM': "Native American",
             'MULT': "Multiple categories of ownership",
-            'UNSP': "Unspecified by surveyor",
+            'UNSP': "Unspecified by Surveyor",
             'PUUN': "Public-unspecified",
             'PRUN': "Private-unspecified",
             'OTHR': "Other",
