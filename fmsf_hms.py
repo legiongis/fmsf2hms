@@ -291,9 +291,9 @@ class FMSFToHMS:
             ds.write_siteids_to_out_layer()
             if os.path.isfile(ownership_file):
                 ds.add_owner_type(ownership_file)
-            ds.export_to_csv()
+            ds.add_output_to_map()
 
-            iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
+            iface.messageBar().pushMessage("Success", "Intermediate layer created, ready to check geometries.", level=Qgis.Info)
 
 
     def run_archaeological_sites(self):
@@ -327,9 +327,9 @@ class FMSFToHMS:
             ds.write_siteids_to_out_layer()
             if os.path.isfile(ownership_file):
                 ds.add_owner_type(ownership_file)
-            ds.export_to_csv()
+            ds.add_output_to_map()
 
-            iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
+            iface.messageBar().pushMessage("Success", "Intermediate layer created, ready to check geometries.", level=Qgis.Info)
 
     def run_historic_structures(self):
         """Run method that performs all the real work"""
@@ -370,9 +370,9 @@ class FMSFToHMS:
             ds.write_siteids_to_out_layer()
             if os.path.isfile(ownership_file):
                 ds.add_owner_type(ownership_file)
-            ds.export_to_csv()
+            ds.add_output_to_map()
 
-            iface.messageBar().pushMessage("Success", "Output CSV created: " + ds.out_csv_path, level=Qgis.Success, duration=0)
+            iface.messageBar().pushMessage("Success", "Intermediate layer created, ready to check geometries.", level=Qgis.Info)
 
     def run_update_arches_lookup(self):
         """Run method that performs all the real work"""
