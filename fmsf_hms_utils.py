@@ -43,26 +43,12 @@ class FMSFDataFilter():
             self.layer_name = os.path.splitext(os.path.basename(self.file_path))[0]
             self.in_layer = QgsVectorLayer(self.file_path, self.layer_name + " - FMSF", "ogr")
 
-            # should implement this here instead:
-            # QgsWkbTypes.displayString(gPnt.wkbType())
-            geomtype = self.in_layer.wkbType()
-            if geomtype == 1:
-                geom_names = ("Point", "point")
-            elif geomtype == 6 or geomtype == 3:
-                geom_names = ("MultiPolygon", "polygon")
-            else:
-                # docs on this geom type are confusing. Good luck!
-                # https://qgis.org/pyqgis/master/core/QgsWkbTypes.html
-                msg = f"Failed: Unrecognized input geometry type: {geomtype}"
-                logger.debug(msg)
-                QgsMessageLog.logMessage(msg, "fmsf2hms")
-                iface.messageBar().pushMessage("Error", msg, level=Qgis.Critical)
-                return False
-
             self.siteid_index = self.in_layer.fields().names().index("SITEID")
 
-            self.out_layer_name = self.layer_name + " - New HMS"
-            self.out_layer = QgsVectorLayer(geom_names[0], self.out_layer_name, "memory",
+            self.out_layer_name = self.layer_name + " - Intermediate Layer"
+
+            geom_name = QgsWkbTypes.displayString(self.in_layer.wkbType())
+            self.out_layer = QgsVectorLayer(geom_name, self.out_layer_name, "memory",
                                             crs=self.in_layer.crs()
                                             )
             self.out_layer_dp = self.out_layer.dataProvider()
@@ -72,42 +58,11 @@ class FMSFDataFilter():
             self.out_layer_dp.addAttributes([QgsField("OWNERSHIP", QVariant.String)])
             self.out_layer.updateFields()
 
-            self.out_csv_path = self.file_path.replace(".shp", "-hms.csv")
-            self.out_csv_uri = "file:///" + self.out_csv_path + "?type=csv&wktField=geom&crs=EPSG:4326&geomType=" + geom_names[1]
-
             msg = "layers initialized"
             logger.debug(msg)
             QgsMessageLog.logMessage(msg, "fmsf2hms")
 
         initialize_layers()
-
-    def _get_export_configs(self):
-
-        configs = {
-            "date_fields": ["YEARESTAB", "D_NRLISTED", "YEARBUILT"],
-            "concat_fields": {}
-        }
-
-        if self.resource_type == "Historic Cemetery":
-            configs['concat_fields'] = {
-                'CEMTYPE': ['CEMTYPE1', 'CEMTYPE2'],
-                'ETHNICGRP': ['ETHNICGRP1', 'ETHNICGRP2', 'ETHNICGRP3', 'ETHNICGRP4']
-            }
-
-        if self.resource_type == "Historic Structure":
-            configs['concat_fields'] = {
-                'STRUCUSE': ['STRUCUSE1', 'STRUCUSE2', 'STRUCUSE3'],
-                'STRUCSYS': ['STRUCSYS1', 'STRUCSYS2', 'STRUCSYS3'],
-                'EXTFABRIC': ['EXTFABRIC1', 'EXTFABRIC2', 'EXTFABRIC3', 'EXTFABRIC4']
-            }
-
-        if self.resource_type == "Archaeological Site":
-            configs['concat_fields'] = {
-                'SITETYPE': ['SITETYPE1', 'SITETYPE2', 'SITETYPE3', 'SITETYPE4', 'SITETYPE5', 'SITETYPE6'],
-                'CULTURE': ['CULTURE1', 'CULTURE2', 'CULTURE3', 'CULTURE4', 'CULTURE5', 'CULTURE6', 'CULTURE7', 'CULTURE8']
-            }
-
-        return configs
 
     def add_input_to_map(self):
         QgsProject.instance().addMapLayer(self.in_layer)
@@ -349,7 +304,8 @@ class HMSDataWriter(object):
             if resource_type == "Archaeological Sites":
                 configs['concat_fields'] = {
                     'SITETYPE': ['SITETYPE1', 'SITETYPE2', 'SITETYPE3', 'SITETYPE4', 'SITETYPE5', 'SITETYPE6'],
-                    'CULTURE': ['CULTURE1', 'CULTURE2', 'CULTURE3', 'CULTURE4', 'CULTURE5', 'CULTURE6', 'CULTURE7', 'CULTURE8']
+                    'CULTURE': ['CULTURE1', 'CULTURE2', 'CULTURE3', 'CULTURE4', 'CULTURE5', 'CULTURE6', 'CULTURE7',
+                                'CULTURE8']
                 }
 
             return configs
@@ -375,10 +331,12 @@ class HMSDataWriter(object):
                 try:
                     d = parse(clean)
                     return d.strftime("%Y-%m-%d")
-                except:
+                except Exception as e:
                     msg = f"Unexpected date value (1) in {siteid}: {clean}"
                     logger.debug(msg)
+                    logger.debug(e)
                     QgsMessageLog.logMessage(msg, "fmsf2hms")
+                    QgsMessageLog.logMessage(e, "fmsf2hms")
                     return ""
             else:
                 msg = f"Unexpected date value (2) in {siteid}: {clean}"
@@ -502,7 +460,8 @@ def load_lookup():
 
     tablefile = get_lookup_table()
     if tablefile is None:
-        iface.messageBar().pushMessage("Error", "Failed: You must first create the FMSF/HMS lookup table.", level=Qgis.Critical)
+        msg = "Failed: You must first create the FMSF/HMS lookup table."
+        iface.messageBar().pushMessage("Error", msg, level=Qgis.Critical)
         return False
 
     with open(tablefile, "r") as openf:

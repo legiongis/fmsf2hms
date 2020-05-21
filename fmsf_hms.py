@@ -45,6 +45,7 @@ from .fmsf_hms_dialogs import (
 from .fmsf_hms_utils import refresh_resource_lookup, load_lookup
 from .fmsf_hms_utils import FMSFDataFilter, HMSDataWriter
 
+
 def make_logger():
     LOGDIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
     logfile = os.path.join(LOGDIR, datetime.now().strftime("fmsf2hms_%Y-%m-%d.log"))
@@ -95,11 +96,6 @@ class FMSFToHMS:
         self.actions = []
         self.menu = self.tr(u'&FMSF - HMS')
 
-        # Check if plugin was started the first time in current QGIS session
-        # Must be set in initGui() to survive plugin reloads
-        self.first_start = None
-
-
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
         """Get the translation for a string using Qt translation API.
@@ -115,18 +111,17 @@ class FMSFToHMS:
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('FMSFToHMS', message)
 
-
     def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
+            self,
+            icon_path,
+            text,
+            callback,
+            enabled_flag=True,
+            add_to_menu=True,
+            add_to_toolbar=True,
+            status_tip=None,
+            whats_this=None,
+            parent=None):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -230,9 +225,6 @@ class FMSFToHMS:
             add_to_toolbar=False
         )
 
-        # will be set False in run()
-        self.first_start = True
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -256,7 +248,6 @@ class FMSFToHMS:
     def select_output_directoy(self):
         dirname = QFileDialog.getExistingDirectory(self.dlg, "Select output directory... ", "")
         self.dlg.outputDirectory.setText(dirname)
-
 
     def run_cemeteries(self):
         """Run method that performs all the real work"""
@@ -293,8 +284,8 @@ class FMSFToHMS:
                 ds.add_owner_type(ownership_file)
             ds.add_output_to_map()
 
-            iface.messageBar().pushMessage("Success", "Intermediate layer created, ready to check geometries.", level=Qgis.Info)
-
+            msg = "Intermediate layer created, ready to check geometries."
+            iface.messageBar().pushMessage("Success", msg, level=Qgis.Info)
 
     def run_archaeological_sites(self):
         """Run method that performs all the real work"""
@@ -329,7 +320,8 @@ class FMSFToHMS:
                 ds.add_owner_type(ownership_file)
             ds.add_output_to_map()
 
-            iface.messageBar().pushMessage("Success", "Intermediate layer created, ready to check geometries.", level=Qgis.Info)
+            msg = "Intermediate layer created, ready to check geometries."
+            iface.messageBar().pushMessage("Success", msg, level=Qgis.Info)
 
     def run_historic_structures(self):
         """Run method that performs all the real work"""
@@ -372,7 +364,8 @@ class FMSFToHMS:
                 ds.add_owner_type(ownership_file)
             ds.add_output_to_map()
 
-            iface.messageBar().pushMessage("Success", "Intermediate layer created, ready to check geometries.", level=Qgis.Info)
+            msg = "Intermediate layer created, ready to check geometries."
+            iface.messageBar().pushMessage("Success", msg, level=Qgis.Info)
 
     def run_update_arches_lookup(self):
         """Run method that performs all the real work"""
@@ -381,10 +374,6 @@ class FMSFToHMS:
         # fmsf_hms_utils operations by using logging.getLogger("fmsf2hms")
         logger = make_logger()
 
-        # Create the dialog with elements (after translation) and keep reference
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        # if self.first_start == True:
-        self.first_start = False
         self.dlg = UpdateLookupDialog()
 
         # show the dialog
